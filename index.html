@@ -120,19 +120,200 @@
           <p>También se observaron incrementos inusuales en productos como algodón, desinfectantes de manos, toallitas húmedas y bolsas de mayor tamaño.</p>
         </article>
 
-        <article class="info-card score-card">
-          <span>MODELO · PREDICTION SCORE</span>
-          <h2>Convertir señales en una puntuación.</h2>
-          <div class="score-row"><strong id="targetScore">87%</strong><span>predicción simulada</span></div>
-          <div class="score-track">
-            <i id="targetScoreBar"></i>
+<!-- ========================= 🧪 LABORATORIO DEL MODELO ========================= -->
+        <article class="info-card wide lab-container-card" id="target-lab">
+          <!-- Barra de contexto CRISP-DM -->
+          <div class="lab-crisp-bar">
+            <span class="lab-badge badge-sim">SIMULACIÓN EDUCATIVA</span>
+            <div class="crisp-stepper">
+  <span class="crisp-step">1. Datos</span>
+  <span class="crisp-step">2. Patrones</span>
+  <span class="crisp-step">3. Modelo</span>
+  <span class="crisp-step active">4. Evaluación (Umbral)</span>
+  <span class="crisp-step">5. Decisión</span>
+</div>
           </div>
-          <div class="slider-wrap">
-            <label>Simular intensidad de señales</label>
-            <input id="targetSlider" type="range" min="10" max="99" value="87">
+
+          <div class="lab-header">
+            <div class="card-heading">
+              <div>
+                <span>LABORATORIO INTERACTIVO</span>
+                <h2>Experimentación: Scoring, Umbral y Evaluación</h2>
+              </div>
+            </div>
+            <p class="lab-description">
+              Toma el rol del científico de datos. Evalúa cómo un modelo lineal asigna probabilidades a 8 clientes sintéticos y cómo la modificación de la <strong>regla de decisión (umbral &theta;)</strong> altera la matriz de confusión y el trade-off entre métricas.
+            </p>
           </div>
-          <p style="color:#8c939d;margin-top:14px">El concepto es que varias señales pueden combinarse en un puntaje. El valor mostrado aquí es únicamente una simulación educativa y no reproduce parámetros internos reales de Target.</p>
+
+          <!-- Contenedor Principal: 2 Columnas -->
+          <div class="lab-grid">
+            
+            <!-- Columna Izquierda: Dataset y XAI -->
+            <div class="lab-col">
+              <div class="lab-subcard">
+                <div class="subcard-header">
+                  <h3>1. Tu Clasificación Manual vs. Algoritmo</h3>
+                  <span class="subcard-tag">8 Perfiles</span>
+                </div>
+                <p class="subcard-desc">Observá las variables de cada cliente y marcá tu voto antes de correr el modelo:</p>
+                
+                <div class="lab-table-wrapper">
+                  <table class="lab-table" id="labClientsTable">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Hábitos (30%)</th>
+                        <th>Sin Aroma (25%)</th>
+                        <th>Suplementos (20%)</th>
+                        <th>Tu Voto</th>
+                        <th class="model-col hidden-col">Score</th>
+                        <th class="model-col hidden-col">Modelo</th>
+                      </tr>
+                    </thead>
+                    <tbody id="labTableBody">
+                      <!-- Se llena dinámicamente desde JS -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style="margin-top: 14px; display: flex; gap: 10px; align-items: center;">
+                  <button class="tradeoff-btn active" id="btnRunModel" type="button" style="padding: 9px 15px; font-weight: 700;">
+                    ▶ EJECUTAR MODELO
+                  </button>
+                  <span id="humanComparisonText" style="color: #475569; font-size: 0.8rem; font-weight: 600;"></span>
+                </div>
+                <small class="lab-disclaimer">Datos sintéticos generados con fines didácticos.</small>
+              </div>
+                <small class="lab-disclaimer">Datos generados con fines didácticos. No representan registros reales de Target.</small>
+              </div>
+
+              <!-- Módulo Explainable AI (XAI) -->
+              <div class="lab-subcard" id="labXaiCard">
+                <div class="subcard-header">
+                  <h3>Explicabilidad (XAI) — Cliente <span id="xaiClientName">A</span></h3>
+                  <span class="subcard-tag">Desglose de Pesos</span>
+                </div>
+                <p class="subcard-desc">Contribución de cada variable al Score Final (<strong id="xaiTotalScore">86.3%</strong>):</p>
+                
+                <div class="xai-bars-container" id="xaiBars">
+                  <!-- Se actualiza dinámicamente -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna Derecha: Control de Umbral, Matriz y Métricas -->
+            <div class="lab-col">
+              
+              <!-- Control de Umbral -->
+              <div class="lab-subcard">
+                <div class="subcard-header">
+                  <h3>2. Regla de Decisión (Umbral &theta;)</h3>
+                  <span class="threshold-display"><strong id="labThresholdVal">65</strong>%</span>
+                </div>
+                <div class="lab-slider-wrapper">
+                  <input type="range" id="labThresholdSlider" min="30" max="90" value="65" step="1">
+                  <div class="slider-ticks">
+                    <span>30% (Sensible / Más Positivos)</span>
+                    <span>65% (Equilibrado)</span>
+                    <span>90% (Estricto / Menos Positivos)</span>
+                  </div>
+                </div>
+                <p class="threshold-hint" id="labThresholdHint">
+                  Todo score &ge; 65% se clasifica como <strong>Positivo</strong>. Scores menores son <strong>Negativos</strong>.
+                </p>
+              </div>
+
+              <!-- Matriz de Confusión 2x2 -->
+              <div class="lab-subcard">
+                <div class="subcard-header">
+                  <h3>3. Matriz de Confusión (N=8)</h3>
+                  <span class="subcard-tag">Evaluación Reactiva</span>
+                </div>
+                
+                <div class="confusion-matrix-grid">
+                  <div class="matrix-header-cell"></div>
+                  <div class="matrix-header-cell">Real Positivo (y=1)</div>
+                  <div class="matrix-header-cell">Real Negativo (y=0)</div>
+
+                  <div class="matrix-row-label">Predicho Positivo (ŷ=1)</div>
+                  <div class="matrix-cell cell-tp" id="cellTP">
+                    <span class="cell-title">Verdaderos Positivos (TP)</span>
+                    <strong class="cell-val" id="valTP">4</strong>
+                  </div>
+                  <div class="matrix-cell cell-fp" id="cellFP">
+                    <span class="cell-title">Falsos Positivos (FP)</span>
+                    <strong class="cell-val" id="valFP">0</strong>
+                  </div>
+
+                  <div class="matrix-row-label">Predicho Negativo (ŷ=0)</div>
+                  <div class="matrix-cell cell-fn" id="cellFN">
+                    <span class="cell-title">Falsos Negativos (FN)</span>
+                    <strong class="cell-val" id="valFN">0</strong>
+                  </div>
+                  <div class="matrix-cell cell-tn" id="cellTN">
+                    <span class="cell-title">Verdaderos Negativos (TN)</span>
+                    <strong class="cell-val" id="valTN">4</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Métricas Formales -->
+              <div class="lab-subcard">
+                <div class="subcard-header">
+                  <h3>4. Métricas de Rendimiento</h3>
+                </div>
+                <div class="metrics-grid">
+                  <div class="metric-card">
+                    <div class="metric-title">
+                      <span>Accuracy</span>
+                      <button class="info-btn" type="button" title="Proporción de predicciones correctas: (TP + TN) / Total">?</button>
+                    </div>
+                    <strong id="metricAccuracy">100%</strong>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-title">
+                      <span>Precision</span>
+                      <button class="info-btn" type="button" title="De los predichos positivos, cuántos eran reales: TP / (TP + FP)">?</button>
+                    </div>
+                    <strong id="metricPrecision">100%</strong>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-title">
+                      <span>Recall</span>
+                      <button class="info-btn" type="button" title="De todos los positivos reales, cuántos detectó: TP / (TP + FN)">?</button>
+                    </div>
+                    <strong id="metricRecall">100%</strong>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-title">
+                      <span>F1-Score</span>
+                      <button class="info-btn" type="button" title="Media armónica entre Precision y Recall.">?</button>
+                    </div>
+                    <strong id="metricF1">1.00</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dilema del Costo del Error -->
+              <div class="lab-subcard error-tradeoff-card">
+                <div class="subcard-header">
+                  <h3>5. Dilema de Negocio y Ética: Costo del Error</h3>
+                </div>
+                <p class="subcard-desc">¿Qué error tiene mayor costo en este escenario?</p>
+                <div class="tradeoff-buttons">
+                  <button class="tradeoff-btn" type="button" id="btnPrioritizeFP">Priorizar Reducción de Falsos Positivos</button>
+                  <button class="tradeoff-btn" type="button" id="btnPrioritizeFN">Priorizar Reducción de Falsos Negativos</button>
+                </div>
+                <div class="tradeoff-feedback" id="tradeoffFeedback">
+                  Selecciona una estrategia para analizar el trade-off.
+                </div>
+              </div>
+
+            </div>
+          </div>
         </article>
+        <!-- ========================= FIN LABORATORIO ========================= -->
 
         <article class="info-card wide">
           <span>¿CÓMO SE TRANSFORMABA EL DATO EN UNA ACCIÓN?</span>
